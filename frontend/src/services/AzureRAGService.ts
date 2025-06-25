@@ -17,6 +17,13 @@ export interface DocumentChunk {
   score: number;
 }
 
+export interface RawDocumentChunk {
+  id: string;
+  content: string;
+  metadata_filename: string;
+  metadata_section: string;
+}
+
 class AzureRagService {
   private endpoint: string;
   private apiKey: string;
@@ -57,6 +64,7 @@ class AzureRagService {
   /**
    * Retrieve relevant documents from Azure AI Search
    */
+
   private async retrieveDocuments(query: string): Promise<DocumentChunk[]> {
     const searchUrl = `${this.searchEndpoint}/indexes/${this.indexName}/docs/search?api-version=2023-11-01`;
 
@@ -246,7 +254,7 @@ Guidelines:
   /**
    * Split document into chunks for better retrieval
    */
-  private chunkDocument(content: string, filename: string): any[] {
+  private chunkDocument(content: string, filename: string): RawDocumentChunk[] {
     const chunkSize = 1000;
     const overlap = 200;
     const chunks = [];
@@ -275,7 +283,7 @@ Guidelines:
   /**
    * Index document chunks in Azure AI Search
    */
-  private async indexDocumentChunks(chunks: any[]): Promise<void> {
+  private async indexDocumentChunks(chunks: RawDocumentChunk[]): Promise<void> {
     const indexUrl = `${this.searchEndpoint}/indexes/${this.indexName}/docs/index?api-version=2023-11-01`;
 
     const indexBody = {

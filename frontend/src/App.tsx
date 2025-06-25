@@ -1,7 +1,8 @@
+// App.tsx
 import { MainContent, Sidebar } from '@/components/Layout';
+import { azureRagService } from '@/services/azureRagService';
 import { useChatStore } from '@/stores/chatStore';
 import { useState } from 'react';
-
 
 function App() {
   const [showUpload, setShowUpload] = useState(false);
@@ -18,7 +19,7 @@ function App() {
   } = useChatStore();
 
   const handleSendMessage = async (message: string) => {
-    // Add user message
+    // Add user message immediately
     addMessage({
       type: 'user',
       content: message,
@@ -26,35 +27,75 @@ function App() {
 
     setLoading(true);
 
-    // Simulate RAG response (replace with actual API call)
-    setTimeout(() => {
-      const response = {
-        type: 'assistant' as const,
-        content: `I understand you're asking about "${message}". Once the RAG system is connected, I'll be able to search through your uploaded documents and provide detailed, contextual responses about music creation, promotion, and album design.`,
-        sources: uploadedFiles.length > 0 ? [uploadedFiles[0].name] : undefined,
-      };
+    try {
+      // Use Azure RAG service for response
+      const ragResponse = await azureRagService.queryWithRag(message, messages);
 
-      addMessage(response);
+      // Add assistant response with sources
+      addMessage({
+        type: 'assistant',
+        content: ragResponse.content,
+        sources: ragResponse.sources.length > 0 ? ragResponse.sources : undefined,
+      });
+    } catch (error) {
+      console.error('RAG query failed:', error);
+
+      // Add error message
+      addMessage({
+        type: 'assistant',
+        content: "I apologize, but I'm having trouble processing your request right now. Please check your connection and try again.",
+      });
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
-  const handleFileUpload = (files: File[]) => {
+  const handleFileUpload = async (files: File[]) => {
+    // Add files to store immediately
     addFiles(files);
     setShowUpload(false);
 
-    // Simulate file processing
-    files.forEach((file, index) => {
-      setTimeout(() => {
-        const fileId = (Date.now() + index).toString();
-        updateFileStatus(fileId, 'processed');
-      }, 2000 + index * 500);
-    });
-
-    // Add confirmation message
+    // Add initial confirmation message
     addMessage({
       type: 'assistant',
-      content: `Great! I've received ${files.length} file(s): ${files.map(f => f.name).join(', ')}. These will be processed and added to my knowledge base for future queries.`,
+      content: `I'm processing ${files.length} file(s): ${files.map(f => f.name).join(', ')}. This may take a few moments...`,
+    });
+
+    // Process each file
+    const processResults = [];
+
+    for (const file of files) {
+      try {
+        // Find the file ID (this is a bit hacky, you might want to return IDs from addFiles)
+        const fileId = (Date.now() + Math.random()).toString();
+
+        // Update status to processing
+        updateFileStatus(fileId, 'uploading');
+
+        // Upload to Azure RAG service
+        await azureRagService.uploadDocument(file);
+
+        // Update status to processed
+        updateFileStatus(fileId, 'processed');
+
+        processResults.push(`✓ ${file.name}`);
+      } catch (error) {
+        console.error(`Failed to process ${file.name}:`, error);
+
+        // Find file ID and update status to error
+        const errorFile = uploadedFiles.find(f => f.name === file.name);
+        if (errorFile) {
+          updateFileStatus(errorFile.id, 'error');
+        }
+
+        processResults.push(`✗ ${file.name} (processing failed)`);
+      }
+    }
+
+    // Add final status message
+    addMessage({
+      type: 'assistant',
+      content: `File processing complete:\n\n${processResults.join('\n')}\n\nYour documents have been added to my knowledge base and I can now reference them when answering your music production questions!`,
     });
   };
 
