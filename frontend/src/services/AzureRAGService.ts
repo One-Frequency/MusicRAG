@@ -33,11 +33,12 @@ class AzureRagService {
 
   constructor() {
     // These should be in your environment variables
-    this.endpoint = process.env.REACT_APP_AZURE_OPENAI_ENDPOINT || '';
-    this.apiKey = process.env.REACT_APP_AZURE_OPENAI_API_KEY || '';
-    this.searchEndpoint = process.env.REACT_APP_AZURE_SEARCH_ENDPOINT || '';
-    this.searchApiKey = process.env.REACT_APP_AZURE_SEARCH_API_KEY || '';
-    this.indexName = process.env.REACT_APP_AZURE_SEARCH_INDEX_NAME || 'music-production-index';
+    this.endpoint = import.meta.env.VITE_AZURE_OPENAI_ENDPOINT || '';
+    this.apiKey = import.meta.env.VITE_AZURE_OPENAI_API_KEY || '';
+    this.searchEndpoint = import.meta.env.VITE_AZURE_SEARCH_ENDPOINT || '';
+    this.searchApiKey = import.meta.env.VITE_AZURE_SEARCH_API_KEY || '';
+    this.indexName =
+      import.meta.env.VITE_AZURE_SEARCH_INDEX_NAME || 'music-production-index';
   }
 
   /**
@@ -52,7 +53,11 @@ class AzureRagService {
       const retrievedDocs = await this.retrieveDocuments(query);
 
       // Step 2: Generate response using retrieved context
-      const response = await this.generateResponse(query, retrievedDocs, conversationHistory);
+      const response = await this.generateResponse(
+        query,
+        retrievedDocs,
+        conversationHistory
+      );
 
       return response;
     } catch (error) {
@@ -70,14 +75,14 @@ class AzureRagService {
 
     const searchBody = {
       search: query,
-      select: "id,content,metadata_filename,metadata_page,metadata_section",
+      select: 'id,content,metadata_filename,metadata_page,metadata_section',
       top: 5,
-      queryType: "semantic",
-      semanticConfiguration: "music-production-config",
-      answers: "extractive|count-3",
-      captions: "extractive|highlight-true",
-      highlightPreTag: "<mark>",
-      highlightPostTag: "</mark>"
+      queryType: 'semantic',
+      semanticConfiguration: 'music-production-config',
+      answers: 'extractive|count-3',
+      captions: 'extractive|highlight-true',
+      highlightPreTag: '<mark>',
+      highlightPostTag: '</mark>',
     };
 
     const response = await fetch(searchUrl, {
@@ -104,16 +109,18 @@ class AzureRagService {
       '@search.score': number;
     }
 
-    return searchResults.value?.map((doc: AzureSearchDoc) => ({
-      id: doc.id,
-      content: doc.content,
-      metadata: {
-        filename: doc.metadata_filename,
-        page: doc.metadata_page,
-        section: doc.metadata_section,
-      },
-      score: doc['@search.score'],
-    })) || [];
+    return (
+      searchResults.value?.map((doc: AzureSearchDoc) => ({
+        id: doc.id,
+        content: doc.content,
+        metadata: {
+          filename: doc.metadata_filename,
+          page: doc.metadata_page,
+          section: doc.metadata_section,
+        },
+        score: doc['@search.score'],
+      })) || []
+    );
   }
 
   /**
@@ -126,13 +133,13 @@ class AzureRagService {
   ): Promise<RagResponse> {
     // Build context from retrieved documents
     const context = retrievedDocs
-      .map(doc => `Source: ${doc.metadata.filename}\n${doc.content}`)
+      .map((doc) => `Source: ${doc.metadata.filename}\n${doc.content}`)
       .join('\n\n---\n\n');
 
     // Build conversation history for context
     const recentHistory = conversationHistory
       .slice(-6) // Last 3 exchanges
-      .map(msg => `${msg.type}: ${msg.content}`)
+      .map((msg) => `${msg.type}: ${msg.content}`)
       .join('\n');
 
     const systemPrompt = `You are an expert music production assistant with access to a knowledge base of music production documents, guides, and resources.
@@ -195,10 +202,14 @@ Guidelines:
     }
 
     const completion = await response.json();
-    const content = completion.choices[0]?.message?.content || 'I apologize, but I could not generate a response.';
+    const content =
+      completion.choices[0]?.message?.content ||
+      'I apologize, but I could not generate a response.';
 
     // Extract unique sources from retrieved documents
-    const sources = [...new Set(retrievedDocs.map(doc => doc.metadata.filename))];
+    const sources = [
+      ...new Set(retrievedDocs.map((doc) => doc.metadata.filename)),
+    ];
 
     return {
       content,
@@ -219,7 +230,6 @@ Guidelines:
 
       // Step 3: Generate embeddings and upload to search index
       await this.indexDocumentChunks(chunks);
-
     } catch (error) {
       console.error('Document upload failed:', error);
       throw new Error(`Failed to process ${file.name}`);
@@ -287,7 +297,7 @@ Guidelines:
     const indexUrl = `${this.searchEndpoint}/indexes/${this.indexName}/docs/index?api-version=2023-11-01`;
 
     const indexBody = {
-      value: chunks.map(chunk => ({
+      value: chunks.map((chunk) => ({
         '@search.action': 'upload',
         ...chunk,
       })),
@@ -317,55 +327,54 @@ Guidelines:
       name: this.indexName,
       fields: [
         {
-          name: "id",
-          type: "Edm.String",
+          name: 'id',
+          type: 'Edm.String',
           key: true,
           searchable: false,
           filterable: true,
           retrievable: true,
         },
         {
-          name: "content",
-          type: "Edm.String",
+          name: 'content',
+          type: 'Edm.String',
           searchable: true,
           filterable: false,
           retrievable: true,
-          analyzer: "standard.lucene",
+          analyzer: 'standard',
         },
         {
-          name: "metadata_filename",
-          type: "Edm.String",
+          name: 'metadata_filename',
+          type: 'Edm.String',
           searchable: true,
           filterable: true,
           retrievable: true,
         },
         {
-          name: "metadata_page",
-          type: "Edm.Int32",
+          name: 'metadata_page',
+          type: 'Edm.Int32',
           searchable: false,
           filterable: true,
           retrievable: true,
         },
         {
-          name: "metadata_section",
-          type: "Edm.String",
+          name: 'metadata_section',
+          type: 'Edm.String',
           searchable: true,
           filterable: true,
           retrievable: true,
         },
       ],
-      semanticConfiguration: {
-        name: "music-production-config",
-        prioritizedFields: {
-          titleField: {
-            fieldName: "metadata_filename",
-          },
-          contentFields: [
-            {
-              fieldName: "content",
+      semantic: {
+        configurations: [
+          {
+            name: 'music-production-config',
+            prioritizedFields: {
+              titleField: { fieldName: 'metadata_filename' },
+              prioritizedContentFields: [{ fieldName: 'content' }],
+              // prioritizedKeywordsFields: [] // optional, you can remove this if you don't have keywords field
             },
-          ],
-        },
+          },
+        ],
       },
     };
 
@@ -379,6 +388,8 @@ Guidelines:
     });
 
     if (!response.ok && response.status !== 204) {
+      const errorBody = await response.text();
+      console.error('Index creation failed body:', errorBody);
       throw new Error(`Index creation failed: ${response.statusText}`);
     }
   }
