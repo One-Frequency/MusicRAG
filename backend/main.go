@@ -5,32 +5,42 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/One-Frequency/MusicRAG/backend/graph"
-	"github.com/One-Frequency/MusicRAG/backend/graph/generated"
+	"github.com/One-Frequency/MusicRAG/backend/internal/api"
+	"github.com/One-Frequency/MusicRAG/backend/internal/azure"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-    r := gin.Default()
+	azure.Init()
+	r := gin.Default()
 
-    // Health check route
-    r.GET("/health", func(c *gin.Context) {
-        c.JSON(http.StatusOK, gin.H{"status": "ok"})
-    })
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173"}, // Or your deployed frontend URL(s)
+		AllowMethods:     []string{"GET", "POST", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+	}))
 
-    // GraphQL handler
-    gqlHandler := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
-    r.POST("/graphql", func(c *gin.Context) { gqlHandler.ServeHTTP(c.Writer, c.Request) })
-    r.GET("/", func(c *gin.Context) {
-        playground.Handler("GraphQL", "/graphql").ServeHTTP(c.Writer, c.Request)
-    })
+	// Health check route
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
 
-    port := os.Getenv("PORT")
-    if port == "" { port = "8080" }
-    log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-    if err := r.Run(":" + port); err != nil {
-        log.Fatal(err)
-    }
+	// API routes
+	apiRoutes := r.Group("/api")
+	{
+		apiRoutes.GET("/hello", api.HelloHandler)
+		apiRoutes.POST("/chat", api.ChatHandler)
+	}
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	log.Printf("Server started on http://localhost:%s", port)
+	if err := r.Run(":" + port); err != nil {
+		log.Fatal(err)
+	}
 }

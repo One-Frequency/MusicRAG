@@ -1,8 +1,12 @@
-// App.tsx
 import { MainContent, Sidebar } from '@/components/Layout';
 import { azureRagService } from '@/services/azureRagService';
 import { useChatStore } from '@/stores/chatStore';
+import type { Message, UploadedFile } from '@/types';
 import { useState } from 'react';
+
+// Helper to generate a unique ID
+const generateId = () =>
+  Date.now().toString() + Math.random().toString(36).substring(2);
 
 function App() {
   const [showUpload, setShowUpload] = useState(false);
@@ -19,84 +23,102 @@ function App() {
   } = useChatStore();
 
   const handleSendMessage = async (message: string) => {
-    // Add user message immediately
-    addMessage({
+    // Create full user message object
+    const userMessage: Message = {
+      id: generateId(),
       type: 'user',
       content: message,
-    });
+      timestamp: new Date(),
+    };
+    addMessage(userMessage);
+
+    // Build full history of messages, including new message
+    const fullHistory: Message[] = [...messages, userMessage];
 
     setLoading(true);
-
     try {
-      // Use Azure RAG service for response
-      const ragResponse = await azureRagService.queryWithRag(message, messages);
+      const ragResponse = await azureRagService.queryWithRag(
+        message,
+        fullHistory
+      );
 
-      // Add assistant response with sources
-      addMessage({
+      // Add assistant message with all required fields
+      const assistantMessage: Message = {
+        id: generateId(),
         type: 'assistant',
         content: ragResponse.content,
-        sources: ragResponse.sources.length > 0 ? ragResponse.sources : undefined,
-      });
+        timestamp: new Date(),
+        sources:
+          ragResponse.sources && ragResponse.sources.length > 0
+            ? ragResponse.sources
+            : undefined,
+      };
+      addMessage(assistantMessage);
     } catch (error) {
       console.error('RAG query failed:', error);
-
-      // Add error message
-      addMessage({
+      // Add error message, fully typed
+      const errorMessage: Message = {
+        id: generateId(),
         type: 'assistant',
-        content: "I apologize, but I'm having trouble processing your request right now. Please check your connection and try again.",
-      });
+        content:
+          "I apologize, but I'm having trouble processing your request right now. Please check your connection and try again.",
+        timestamp: new Date(),
+      };
+      addMessage(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   const handleFileUpload = async (files: File[]) => {
-    // Add files to store immediately
-    addFiles(files);
+    // Wrap files into UploadedFile objects with initial status
+    const filesWithMeta: UploadedFile[] = files.map((file) => ({
+      id: generateId(),
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      file,
+      status: 'uploading',
+    }));
+    addFiles(filesWithMeta);
     setShowUpload(false);
 
-    // Add initial confirmation message
-    addMessage({
+    // Feedback message for file processing
+    const processingMessage: Message = {
+      id: generateId(),
       type: 'assistant',
-      content: `I'm processing ${files.length} file(s): ${files.map(f => f.name).join(', ')}. This may take a few moments...`,
-    });
+      content: `I'm processing ${files.length} file(s): ${files
+        .map((f) => f.name)
+        .join(', ')}. This may take a few moments...`,
+      timestamp: new Date(),
+    };
+    addMessage(processingMessage);
 
-    // Process each file
-    const processResults = [];
-
-    for (const file of files) {
+    // Keep user updated as each file is processed
+    const processResults: string[] = [];
+    for (const uploaded of filesWithMeta) {
       try {
-        // Find the file ID (this is a bit hacky, you might want to return IDs from addFiles)
-        const fileId = (Date.now() + Math.random()).toString();
+        updateFileStatus(uploaded.id, 'uploading');
 
-        // Update status to processing
-        updateFileStatus(fileId, 'uploading');
+        await azureRagService.uploadDocument(uploaded.file);
 
-        // Upload to Azure RAG service
-        await azureRagService.uploadDocument(file);
-
-        // Update status to processed
-        updateFileStatus(fileId, 'processed');
-
-        processResults.push(`✓ ${file.name}`);
+        updateFileStatus(uploaded.id, 'processed');
+        processResults.push(`✓ ${uploaded.name}`);
       } catch (error) {
-        console.error(`Failed to process ${file.name}:`, error);
-
-        // Find file ID and update status to error
-        const errorFile = uploadedFiles.find(f => f.name === file.name);
-        if (errorFile) {
-          updateFileStatus(errorFile.id, 'error');
-        }
-
-        processResults.push(`✗ ${file.name} (processing failed)`);
+                console.error(`Failed to process file "${uploaded.name}"`, error);
+        updateFileStatus(uploaded.id, 'error');
+        processResults.push(`✗ ${uploaded.name} (error)`);
       }
     }
 
-    // Add final status message
-    addMessage({
+    // After processing all files, show results to user
+    const finishedMessage: Message = {
+      id: generateId(),
       type: 'assistant',
-      content: `File processing complete:\n\n${processResults.join('\n')}\n\nYour documents have been added to my knowledge base and I can now reference them when answering your music production questions!`,
-    });
+      content: `File processing finished:\n${processResults.join('\n')}`,
+      timestamp: new Date(),
+    };
+    addMessage(finishedMessage);
   };
 
   return (
