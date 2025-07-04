@@ -1,49 +1,88 @@
 package azure
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
-
-	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 )
+
+// API-specific request and response structures
+type ChatMessage struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+type ChatRequest struct {
+	Messages []ChatMessage `json:"messages"`
+}
+
+type ChatResponse struct {
+	Choices []struct {
+		Message struct {
+			Content string `json:"content"`
+		} `json:"message"`
+	} `json:"choices"`
+}
 
 func GetCompletion(ctx context.Context, query string, documents []string) (string, error) {
 	deployment := getOpenAIDeploymentName()
+	url := fmt.Sprintf("%s/openai/deployments/%s/chat/completions?api-version=2023-05-15", openaiEndpoint, deployment)
 
 	// Build the chat messages
-	messages := []azopenai.ChatRequestMessage{
-		{Role: azopenai.ChatRoleSystem, Content: to.Ptr("You are a helpful assistant.")},
-		{Role: azopenai.ChatRoleUser, Content: to.Ptr(query)},
+	messages := []ChatMessage{
+		{Role: "system", Content: "You are a helpful assistant."},
+		{Role: "user", Content: query},
 	}
 	for _, doc := range documents {
-		messages = append(messages, azopenai.ChatRequestMessage{Role: azopenai.ChatRoleAssistant, Content: to.Ptr(doc)})
+		messages = append(messages, ChatMessage{Role: "assistant", Content: doc})
 	}
 
-	// Get the chat completions
-	resp, err := OpenAIClient.GetChatCompletions(ctx, azopenai.GetChatCompletionsOptions{
-		Messages:       messages,
-		DeploymentName: &deployment,
-	})
+	// Create the request body
+	reqBody, err := json.Marshal(ChatRequest{Messages: messages})
 	if err != nil {
-		return "", fmt.Errorf("failed to get chat completions: %w", err)
+		return "", fmt.Errorf("failed to marshal request body: %w", err)
 	}
 
-	if len(resp.Choices) == 0 {
+	// Create the HTTP request
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(reqBody))
+	if err != nil {
+		return "", fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("api-key", openaiAPIKey)
+
+	// Send the request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Read and parse the response
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("received non-200 status code: %d - %s", resp.StatusCode, string(respBody))
+	}
+
+	var chatResp ChatResponse
+	if err := json.Unmarshal(respBody, &chatResp); err != nil {
+		return "", fmt.Errorf("failed to unmarshal response body: %w", err)
+	}
+
+	if len(chatResp.Choices) == 0 {
 		return "", fmt.Errorf("no choices in response")
 	}
 
-	return *resp.Choices[0].Message.Content, nil
-}
-
-func NewOpenAIClient(endpoint, apiKey string) (*azopenai.Client, error) {
-	cred := azopenai.NewKeyCredential(apiKey)
-	client, err := azopenai.NewClientWithCredential(endpoint, cred, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create new openai client: %w", err)
-	}
-	return client, nil
+	return chatResp.Choices[0].Message.Content, nil
 }
 
 func getOpenAIDeploymentName() string {

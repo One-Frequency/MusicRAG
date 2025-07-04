@@ -4,12 +4,15 @@ import (
 	"log"
 	"os"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
 	"github.com/joho/godotenv"
 )
 
 var (
-	OpenAIClient         *azopenai.Client
+	// OpenAI credentials
+	openaiEndpoint string
+	openaiAPIKey   string
+
+	// Search client
 	SearchClientInstance *SearchClient
 )
 
@@ -19,17 +22,12 @@ func Init() {
 		log.Fatalf("Error loading .env file")
 	}
 
-	// Initialize OpenAI Client
-	openaiEndpoint := os.Getenv("AZURE_OPENAI_ENDPOINT")
-	openaiAPIKey := os.Getenv("AZURE_OPENAI_API_KEY")
+	// Initialize OpenAI Credentials
+	openaiEndpoint = os.Getenv("AZURE_OPENAI_ENDPOINT")
+	openaiAPIKey = os.Getenv("AZURE_OPENAI_API_KEY")
 
 	if openaiEndpoint == "" || openaiAPIKey == "" {
 		log.Fatalf("AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY must be set")
-	}
-
-	OpenAIClient, err = NewOpenAIClient(openaiEndpoint, openaiAPIKey)
-	if err != nil {
-		log.Fatalf("Failed to create OpenAI client: %v", err)
 	}
 
 	// Initialize Search Client
