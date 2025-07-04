@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	OpenAIClient *azopenai.Client
-	SearchClient *SearchClient
+	OpenAIClient         *azopenai.Client
+	SearchClientInstance *SearchClient
 )
 
 func Init() {
@@ -27,7 +27,7 @@ func Init() {
 		log.Fatalf("AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY must be set")
 	}
 
-	OpenAIClient, err = newOpenAIClient(openaiEndpoint, openaiAPIKey)
+	OpenAIClient, err = NewOpenAIClient(openaiEndpoint, openaiAPIKey)
 	if err != nil {
 		log.Fatalf("Failed to create OpenAI client: %v", err)
 	}
@@ -36,16 +36,17 @@ func Init() {
 	searchEndpoint := os.Getenv("AZURE_SEARCH_ENDPOINT")
 	searchAPIKey := os.Getenv("AZURE_SEARCH_API_KEY")
 	searchIndexName := os.Getenv("AZURE_SEARCH_INDEX_NAME")
+	subscriptionID := os.Getenv("AZURE_SUBSCRIPTION_ID")
 
 	if searchEndpoint == "" || searchAPIKey == "" || searchIndexName == "" {
 		log.Fatalf("AZURE_SEARCH_ENDPOINT, AZURE_SEARCH_API_KEY, and AZURE_SEARCH_INDEX_NAME must be set")
 	}
 
-	searchClient, err := NewSearchClient(searchEndpoint, searchAPIKey, searchIndexName)
+	searchClient, err := NewSearchClient(subscriptionID, searchEndpoint, searchAPIKey, searchIndexName)
 	if err != nil {
 		log.Fatalf("Failed to create Search client: %v", err)
 	}
-	SearchClient = searchClient
+	SearchClientInstance = searchClient
 
 	log.Println("Azure clients initialized successfully")
 }

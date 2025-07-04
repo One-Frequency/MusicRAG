@@ -2,25 +2,48 @@ package azure
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 )
 
 func GetCompletion(ctx context.Context, query string, documents []string) (string, error) {
-	// This is a placeholder implementation.
-	// In a real application, you would use the query and documents to generate a completion.
-	return "This is a dummy response from the language model.", nil
+	deployment := getOpenAIDeploymentName()
+
+	// Build the chat messages
+	messages := []azopenai.ChatRequestMessage{
+		{Role: azopenai.ChatRoleSystem, Content: to.Ptr("You are a helpful assistant.")},
+		{Role: azopenai.ChatRoleUser, Content: to.Ptr(query)},
+	}
+	for _, doc := range documents {
+		messages = append(messages, azopenai.ChatRequestMessage{Role: azopenai.ChatRoleAssistant, Content: to.Ptr(doc)})
+	}
+
+	// Get the chat completions
+	resp, err := OpenAIClient.GetChatCompletions(ctx, azopenai.GetChatCompletionsOptions{
+		Messages:       messages,
+		DeploymentName: &deployment,
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to get chat completions: %w", err)
+	}
+
+	if len(resp.Choices) == 0 {
+		return "", fmt.Errorf("no choices in response")
+	}
+
+	return *resp.Choices[0].Message.Content, nil
 }
 
-func GetEmbeddings(ctx context.Context, texts []string) ([][]float32, error) {
-	// This is a placeholder implementation.
-	// In a real application, you would use the texts to generate embeddings.
-	return [][]float32{{0.1, 0.2, 0.3}}, nil
-}
-
-func newOpenAIClient(endpoint, apiKey string) (*azopenai.Client, error) {
-	return azopenai.NewClient(endpoint, &azopenai.KeyCredential{Key: apiKey}, nil)
+func NewOpenAIClient(endpoint, apiKey string) (*azopenai.Client, error) {
+	cred := azopenai.NewKeyCredential(apiKey)
+	client, err := azopenai.NewClientWithCredential(endpoint, cred, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new openai client: %w", err)
+	}
+	return client, nil
 }
 
 func getOpenAIDeploymentName() string {

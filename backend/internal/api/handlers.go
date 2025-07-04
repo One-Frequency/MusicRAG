@@ -23,15 +23,8 @@ func ChatHandler(c *gin.Context) {
 		return
 	}
 
-	// Get embeddings for the query
-	embeddings, err := azure.GetEmbeddings(c, []string{req.Query})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
 	// Query the search index
-	documents, err := azure.SearchClient.Query(c, embeddings)
+	documents, err := azure.SearchClientInstance.Query(c, req.Query)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

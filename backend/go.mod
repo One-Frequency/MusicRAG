@@ -4,14 +4,14 @@ go 1.24.4
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai v0.8.0
-	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/search/armsearch v1.0.0
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.18.0
 	github.com/gin-contrib/cors v1.7.6
 	github.com/gin-gonic/gin v1.10.1
 	github.com/joho/godotenv v1.5.1
+	github.com/wbreza/azure-sdk-for-go/sdk/data/azsearchindex v0.3.1
 )
 
 require (
-	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.18.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.11.1 // indirect
 	github.com/bytedance/sonic v1.13.3 // indirect
 	github.com/bytedance/sonic/loader v0.2.4 // indirect
