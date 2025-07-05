@@ -1,5 +1,5 @@
 import { MainContent, Sidebar } from '@/components/Layout';
-import { azureRagService } from '@/services/azureRagService';
+import { azureRagService } from '@/services/AzureRAGService';
 import { useChatStore } from '@/stores/chatStore';
 import type { Message, UploadedFile } from '@/types';
 import { useState } from 'react';
@@ -105,7 +105,7 @@ function App() {
         updateFileStatus(uploaded.id, 'processed');
         processResults.push(`✓ ${uploaded.name}`);
       } catch (error) {
-                console.error(`Failed to process file "${uploaded.name}"`, error);
+        console.error(`Failed to process file "${uploaded.name}"`, error);
         updateFileStatus(uploaded.id, 'error');
         processResults.push(`✗ ${uploaded.name} (error)`);
       }

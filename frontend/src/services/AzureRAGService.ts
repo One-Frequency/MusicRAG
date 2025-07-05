@@ -11,6 +11,19 @@ export interface RagResponse {
 
 class AzureRagService {
   /**
+   * Upload a document to the backend for ingestion.
+   * Currently a stub so the frontend compiles; replace with real implementation once
+   * the backend exposes an endpoint for uploads.
+   */
+  async uploadDocument(file: File): Promise<void> {
+    // TODO: replace with real API call
+    console.warn(
+      '[AzureRagService] uploadDocument called, but no endpoint is implemented.',
+      file.name
+    );
+    return Promise.resolve();
+  }
+  /**
    * Main RAG query method - sends the query and conversation to your Go GraphQL backend
    */
   async queryWithRag(

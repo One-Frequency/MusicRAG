@@ -1,12 +1,15 @@
-import { ChatState, Message } from '@/types';
+import { ChatState, Message, UploadedFile } from '@/types';
 import { create } from 'zustand';
 
 interface ChatStore extends ChatState {
-  addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
+  addMessage: (message: Message) => void;
   setLoading: (loading: boolean) => void;
-  addFiles: (files: File[]) => void;
+  addFiles: (files: UploadedFile[]) => void;
   removeFile: (fileId: string) => void;
-  updateFileStatus: (fileId: string, status: 'uploading' | 'processed' | 'error') => void;
+  updateFileStatus: (
+    fileId: string,
+    status: 'uploading' | 'processed' | 'error'
+  ) => void;
 }
 
 export const useChatStore = create<ChatStore>((set) => ({
@@ -14,7 +17,8 @@ export const useChatStore = create<ChatStore>((set) => ({
     {
       id: '1',
       type: 'assistant',
-      content: 'Hi! I\'m your music creation assistant. Upload some documents or ask me anything about music production, promotion, or album covers.',
+      content:
+        "Hi! I'm your music creation assistant. Upload some documents or ask me anything about music production, promotion, or album covers.",
       timestamp: new Date(),
     },
   ],
@@ -37,17 +41,7 @@ export const useChatStore = create<ChatStore>((set) => ({
 
   addFiles: (files) =>
     set((state) => ({
-      uploadedFiles: [
-        ...state.uploadedFiles,
-        ...files.map((file) => ({
-          id: Date.now().toString() + Math.random(),
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          file,
-          status: 'uploading' as const,
-        })),
-      ],
+      uploadedFiles: [...state.uploadedFiles, ...files],
     })),
 
   removeFile: (fileId) =>
