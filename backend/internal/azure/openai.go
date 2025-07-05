@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"net/http/httputil"
 	"os"
 )
 
@@ -57,11 +59,23 @@ func GetCompletion(ctx context.Context, query string, documents []string) (strin
 
 	// Send the request
 	client := &http.Client{}
+	dump, err := httputil.DumpRequestOut(req, true)
+	if err != nil {
+		log.Printf("Failed to dump request: %v", err)
+	} else {
+		log.Printf("Request dump:\n%s", string(dump))
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("failed to send request: %w", err)
 	}
 	defer resp.Body.Close()
+	dump, err = httputil.DumpResponse(resp, true)
+	if err != nil {
+		log.Printf("Failed to dump response: %v", err)
+	} else {
+		log.Printf("Response dump:\n%s", string(dump))
+	}
 
 	// Read and parse the response
 	respBody, err := io.ReadAll(resp.Body)

@@ -23,15 +23,8 @@ func ChatHandler(c *gin.Context) {
 		return
 	}
 
-	// Query the search index
-	documents, err := azure.SearchClientInstance.Query(c, req.Query)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
 	// Get a completion from the language model
-	completion, err := azure.GetCompletion(c, req.Query, documents)
+	completion, err := azure.GetCompletion(c, req.Query, []string{})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -39,7 +32,7 @@ func ChatHandler(c *gin.Context) {
 
 	response := RagResponse{
 		Content: completion,
-		Sources: documents,
+		Sources: []string{},
 	}
 
 	c.JSON(http.StatusOK, response)

@@ -2,7 +2,9 @@ package azure
 
 import (
 	"context"
+	"log"
 	"net/http"
+	"net/http/httputil"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
@@ -18,7 +20,23 @@ type keyTransport struct {
 // Do adds the api-key header and sends the request using the underlying http.Client.
 func (t *keyTransport) Do(req *http.Request) (*http.Response, error) {
 	req.Header.Set("api-key", t.apiKey)
-	return t.client.Do(req)
+	dump, err := httputil.DumpRequestOut(req, true)
+	if err != nil {
+		log.Printf("Failed to dump request: %v", err)
+	} else {
+		log.Printf("Request dump:\n%s", string(dump))
+	}
+	resp, err := t.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	dump, err = httputil.DumpResponse(resp, true)
+	if err != nil {
+		log.Printf("Failed to dump response: %v", err)
+	} else {
+		log.Printf("Response dump:\n%s", string(dump))
+	}
+	return resp, err
 }
 
 // dummyCredential is a placeholder to satisfy the NewDocumentsClient constructor, which requires a TokenCredential.
