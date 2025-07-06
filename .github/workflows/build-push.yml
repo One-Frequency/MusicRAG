@@ -1,0 +1,54 @@
+name: Build & Push Go Backend Image
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  GO_VERSION: "1.24"
+  IMAGE_NAME: chat-backend          # matches <prefix>/chat-backend ECR repo
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # for OIDC to AWS
+      contents: read
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      # ──────── Go vet / tests ────────
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Go vet
+        run: go vet ./...
+
+      - name: Run unit tests
+        run: go test ./...
+
+      # ──────── Authenticate to AWS via OIDC ────────
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # ──────── Build & push container ────────
+      - name: Build and push Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -f backend/Dockerfile -t $ECR_REGISTRY/${{ env.IMAGE_NAME }}:latest -t $ECR_REGISTRY/${{ env.IMAGE_NAME }}:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/${{ env.IMAGE_NAME }} --all-tags
