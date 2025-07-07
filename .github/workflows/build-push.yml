@@ -8,7 +8,7 @@ on:
 
 env:
   GO_VERSION: "1.24"
-  IMAGE_NAME: chat-backend          # matches <prefix>/chat-backend ECR repo
+  IMAGE_NAME: musicrag/chat-backend          # matches ECR repo path
 
 jobs:
   build:
