@@ -17,9 +17,8 @@ var (
 )
 
 func Init() {
-	err := godotenv.Load() // Load .env from current directory
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
+	if err := godotenv.Load(); err != nil && !os.IsNotExist(err) {
+		log.Fatalf("unexpected error loading .env file: %v", err)
 	}
 
 	// Initialize OpenAI Credentials
