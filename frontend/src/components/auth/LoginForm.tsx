@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
+  email: z.string().min(1, 'Email or username is required'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   rememberMe: z.boolean().optional(),
 });
@@ -17,14 +17,9 @@ type LoginFormData = z.infer<typeof loginSchema>;
 interface LoginFormProps {
   onSuccess?: () => void;
   onError?: (error: string) => void;
-  redirectAfterLogin?: string;
 }
 
-export const LoginForm = ({
-  onSuccess,
-  onError,
-  redirectAfterLogin,
-}: LoginFormProps) => {
+export const LoginForm = ({ onSuccess, onError }: LoginFormProps) => {
   const { login, isLoading, error, clearError } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -68,15 +63,15 @@ export const LoginForm = ({
             htmlFor="email"
             className="block text-sm font-medium text-gray-700 mb-1"
           >
-            Email Address
+            Email or Username
           </label>
           <input
             id="email"
-            type="email"
-            autoComplete="email"
+            type="text"
+            autoComplete="username"
             {...register('email')}
             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Enter your email"
+            placeholder="Enter your email or username"
           />
           {errors.email && (
             <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>

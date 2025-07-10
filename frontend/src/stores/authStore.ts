@@ -79,8 +79,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const { isSignedIn, nextStep } = await signIn({
-        username: credentials.email,
+      // Use email field as username (could be email or username)
+      const { isSignedIn } = await signIn({
+        username: credentials.email, // This field accepts both email and username
         password: credentials.password,
       });
 
@@ -121,7 +122,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const { isSignUpComplete, nextStep } = await signUp({
+      const { isSignUpComplete } = await signUp({
         username: data.email,
         password: data.password,
         options: {

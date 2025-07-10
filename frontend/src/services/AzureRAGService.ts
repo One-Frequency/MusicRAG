@@ -1,15 +1,37 @@
 // services/azureRagService.ts
 
 import { Message } from '@/types';
+import { fetchAuthSession } from 'aws-amplify/auth';
 
 export interface RagResponse {
   content: string;
   sources: string[];
 }
 
-// If you still want to use upload functionality, you may need to re-route those as well (see bottom).
-
 class AzureRagService {
+  /**
+   * Get authorization headers with JWT token
+   */
+  private async getAuthHeaders(): Promise<Record<string, string>> {
+    try {
+      const session = await fetchAuthSession();
+      const token = session.tokens?.accessToken?.toString();
+
+      if (token) {
+        return {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        };
+      }
+    } catch (error) {
+      console.warn('Failed to get auth token:', error);
+    }
+
+    return {
+      'Content-Type': 'application/json',
+    };
+  }
+
   /**
    * Upload a document to the backend for ingestion.
    * Currently a stub so the frontend compiles; replace with real implementation once
@@ -23,6 +45,7 @@ class AzureRagService {
     );
     return Promise.resolve();
   }
+
   /**
    * Main RAG query method - sends the query and conversation to your Go GraphQL backend
    */
@@ -30,9 +53,11 @@ class AzureRagService {
     query: string,
     conversationHistory: Message[] = []
   ): Promise<RagResponse> {
+    const headers = await this.getAuthHeaders();
+
     const res = await fetch('/api/chat', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         query,
         conversationHistory: conversationHistory.map((msg) => ({
