@@ -6,7 +6,7 @@ interface SmartLandingProps {
 }
 
 export const SmartLanding = ({ children }: SmartLandingProps) => {
-  const { isAuthenticated, isLoading, initializeAuth } = useAuthStore();
+  const { isLoading, initializeAuth } = useAuthStore();
 
   useEffect(() => {
     // Initialize authentication state on app load
