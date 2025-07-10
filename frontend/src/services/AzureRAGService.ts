@@ -55,7 +55,8 @@ class AzureRagService {
   ): Promise<RagResponse> {
     const headers = await this.getAuthHeaders();
 
-    const res = await fetch('/api/chat', {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+    const res = await fetch(`${apiUrl}/api/chat`, {
       method: 'POST',
       headers,
       body: JSON.stringify({
