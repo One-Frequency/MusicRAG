@@ -140,6 +140,96 @@ Added the `audience` parameter to the AWS credentials configuration:
    act -n  # dry run to check syntax
    ```
 
+## Deployment Architecture
+
+**Important**: The MusicRAG project uses a two-repository deployment model:
+
+1. **This Repository (MusicRAG)**: Builds and pushes Docker images to ECR
+2. **Infrastructure Repository** (`OneFrequency/one-frequency-infrastructure`): Handles ECS deployment and AWS infrastructure
+
+### Current Workflow
+1. Backend changes trigger `.github/workflows/build-push.yml`
+2. Image is built and pushed to ECR with tags: `latest` and `{git-sha}`
+3. Infrastructure repo detects new image and deploys to ECS (separate process)
+
+### ECS Deployment "Refresh" Issue
+
+**Problem**: Sometimes ECS doesn't automatically pick up new images from ECR, requiring manual intervention.
+
+**Automated Solutions** (to be implemented in infrastructure repo):
+
+#### Option 1: Force ECS Service Update
+Add to infrastructure repo workflow:
+```yaml
+- name: Force ECS Service Update
+  run: |
+    aws ecs update-service \
+      --cluster ${{ secrets.ECS_CLUSTER_NAME }} \
+      --service ${{ secrets.ECS_SERVICE_NAME }} \
+      --force-new-deployment
+```
+
+#### Option 2: Update Task Definition with New Image
+```yaml
+- name: Update ECS Task Definition
+  run: |
+    # Get current task definition
+    TASK_DEF=$(aws ecs describe-task-definition --task-definition ${{ secrets.TASK_DEFINITION_FAMILY }} --query 'taskDefinition')
+
+    # Update image URI in task definition
+    NEW_TASK_DEF=$(echo $TASK_DEF | jq --arg IMAGE "$ECR_REGISTRY/$IMAGE_NAME:${{ github.sha }}" '.containerDefinitions[0].image = $IMAGE')
+
+    # Register new task definition
+    aws ecs register-task-definition --cli-input-json "$NEW_TASK_DEF"
+
+    # Update service to use new task definition
+    aws ecs update-service \
+      --cluster ${{ secrets.ECS_CLUSTER_NAME }} \
+      --service ${{ secrets.ECS_SERVICE_NAME }} \
+      --task-definition ${{ secrets.TASK_DEFINITION_FAMILY }}
+```
+
+#### Option 3: Cross-Repository Trigger
+Add to this repo's workflow to trigger infrastructure deployment:
+```yaml
+- name: Trigger Infrastructure Deployment
+  uses: peter-evans/repository-dispatch@v2
+  with:
+    token: ${{ secrets.INFRASTRUCTURE_REPO_TOKEN }}
+    repository: OneFrequency/one-frequency-infrastructure
+    event-type: backend-updated
+    client-payload: |
+      {
+        "image_tag": "${{ github.sha }}",
+        "image_uri": "${{ steps.login-ecr.outputs.registry }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+      }
+```
+
+### Manual Refresh Steps (Current Workaround)
+If automated deployment fails, manually refresh ECS:
+
+1. **Via AWS Console**:
+   - Go to ECS → Clusters → Your Cluster → Services
+   - Select your service → Update
+   - Check "Force new deployment"
+   - Click "Update service"
+
+2. **Via AWS CLI**:
+   ```bash
+   aws ecs update-service \
+     --cluster YOUR_CLUSTER_NAME \
+     --service YOUR_SERVICE_NAME \
+     --force-new-deployment
+   ```
+
+3. **Verify Deployment**:
+   ```bash
+   aws ecs describe-services \
+     --cluster YOUR_CLUSTER_NAME \
+     --services YOUR_SERVICE_NAME \
+     --query 'services[0].deployments'
+   ```
+
 ## Workflow File Location
 The main workflow file is located at: `.github/workflows/build-push.yml`
 
