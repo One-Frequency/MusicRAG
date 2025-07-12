@@ -190,7 +190,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           isAuthenticated: true,
         });
       }
-    } catch (error: any) {
+    } catch {
       // Token refresh failed, user needs to re-authenticate
       set({
         user: null,
@@ -267,7 +267,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           isLoading: false,
         });
       }
-    } catch (error) {
+    } catch {
       // User is not authenticated
       set({
         user: null,

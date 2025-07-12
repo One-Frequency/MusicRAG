@@ -8,7 +8,10 @@ interface ChatMessagesProps {
   isLoading: boolean;
 }
 
-export const ChatMessages: React.FC<ChatMessagesProps> = ({ messages, isLoading }) => {
+export const ChatMessages: React.FC<ChatMessagesProps> = ({
+  messages,
+  isLoading,
+}) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -21,7 +24,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({ messages, isLoading 
 
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-4">
-      {messages.map(message => (
+      {messages.map((message) => (
         <MessageItem key={message.id} message={message} />
       ))}
 

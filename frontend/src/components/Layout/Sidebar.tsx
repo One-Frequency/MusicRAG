@@ -47,12 +47,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             Knowledge Base ({uploadedFiles.length})
           </h3>
           <div className="space-y-2">
-            {uploadedFiles.map(file => (
-              <FileItem
-                key={file.id}
-                file={file}
-                onRemove={onRemoveFile}
-              />
+            {uploadedFiles.map((file) => (
+              <FileItem key={file.id} file={file} onRemove={onRemoveFile} />
             ))}
             {uploadedFiles.length === 0 && (
               <p className="text-sm text-gray-500 text-center py-8">

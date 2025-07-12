@@ -1,5 +1,12 @@
 import { UploadedFile } from '@/types';
-import { AlertCircle, CheckCircle, FileText, Image, Mic, X } from 'lucide-react';
+import {
+  AlertCircle,
+  CheckCircle,
+  FileText,
+  Image,
+  Mic,
+  X,
+} from 'lucide-react';
 import React from 'react';
 
 interface FileItemProps {
@@ -9,8 +16,10 @@ interface FileItemProps {
 
 export const FileItem: React.FC<FileItemProps> = ({ file, onRemove }) => {
   const getFileIcon = (type: string) => {
-    if (type.startsWith('audio/')) return <Mic className="w-4 h-4 text-green-500" />;
-    if (type.startsWith('image/')) return <Image className="w-4 h-4 text-blue-500" />;
+    if (type.startsWith('audio/'))
+      return <Mic className="w-4 h-4 text-green-500" />;
+    if (type.startsWith('image/'))
+      return <Image className="w-4 h-4 text-blue-500" />;
     return <FileText className="w-4 h-4 text-gray-500" />;
   };
 
@@ -21,7 +30,9 @@ export const FileItem: React.FC<FileItemProps> = ({ file, onRemove }) => {
       case 'error':
         return <AlertCircle className="w-4 h-4 text-red-500" />;
       case 'uploading':
-        return <div className="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />;
+        return (
+          <div className="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+        );
     }
   };
 
@@ -40,9 +51,7 @@ export const FileItem: React.FC<FileItemProps> = ({ file, onRemove }) => {
         <p className="text-sm font-medium text-gray-900 truncate">
           {file.name}
         </p>
-        <p className="text-xs text-gray-500">
-          {formatFileSize(file.size)}
-        </p>
+        <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
       </div>
       <div className="flex items-center gap-2">
         {getStatusIcon(file.status)}
