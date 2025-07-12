@@ -8,19 +8,19 @@ import (
 
 // UserClaims represents the claims extracted from a JWT token
 type UserClaims struct {
-	Sub           string   `json:"sub"`
-	Email         string   `json:"email"`
-	Groups        []string `json:"cognito:groups"`
-	UserTier      string   `json:"custom:userTier"`
-	Department    string   `json:"custom:department,omitempty"`
-	Role          string   `json:"custom:role,omitempty"`
-	FirstName     string   `json:"given_name,omitempty"`
-	LastName      string   `json:"family_name,omitempty"`
-	PhoneNumber   string   `json:"phone_number,omitempty"`
-	Exp           int64    `json:"exp"`
-	Iat           int64    `json:"iat"`
-	Aud           string   `json:"aud"`
-	Iss           string   `json:"iss"`
+	Sub         string   `json:"sub"`
+	Email       string   `json:"email"`
+	Groups      []string `json:"cognito:groups"`
+	UserTier    string   `json:"custom:userTier"`
+	Department  string   `json:"custom:department,omitempty"`
+	Role        string   `json:"custom:role,omitempty"`
+	FirstName   string   `json:"given_name,omitempty"`
+	LastName    string   `json:"family_name,omitempty"`
+	PhoneNumber string   `json:"phone_number,omitempty"`
+	Exp         int64    `json:"exp"`
+	Iat         int64    `json:"iat"`
+	Aud         string   `json:"aud"`
+	Iss         string   `json:"iss"`
 }
 
 // Implement jwt.Claims interface
@@ -50,18 +50,18 @@ func (c UserClaims) GetAudience() (jwt.ClaimStrings, error) {
 
 // EnterpriseUser represents the user data structure for enterprise features
 type EnterpriseUser struct {
-	UserID             string                 `json:"userId" db:"user_id"`
-	Email              string                 `json:"email" db:"email"`
-	UserTier           string                 `json:"userTier" db:"user_tier"`
-	ServicePermissions map[string]bool        `json:"servicePermissions" db:"service_permissions"`
-	Groups             []string               `json:"groups" db:"groups"`
-	Department         *string                `json:"department,omitempty" db:"department"`
-	Role               *string                `json:"role,omitempty" db:"role"`
-	CreatedAt          time.Time              `json:"createdAt" db:"created_at"`
-	LastLogin          *time.Time             `json:"lastLogin,omitempty" db:"last_login"`
-	LoginCount         int                    `json:"loginCount" db:"login_count"`
-	MFAEnabled         bool                   `json:"mfaEnabled" db:"mfa_enabled"`
-	Profile            UserProfile            `json:"profile"`
+	UserID             string          `json:"userId" db:"user_id"`
+	Email              string          `json:"email" db:"email"`
+	UserTier           string          `json:"userTier" db:"user_tier"`
+	ServicePermissions map[string]bool `json:"servicePermissions" db:"service_permissions"`
+	Groups             []string        `json:"groups" db:"groups"`
+	Department         *string         `json:"department,omitempty" db:"department"`
+	Role               *string         `json:"role,omitempty" db:"role"`
+	CreatedAt          time.Time       `json:"createdAt" db:"created_at"`
+	LastLogin          *time.Time      `json:"lastLogin,omitempty" db:"last_login"`
+	LoginCount         int             `json:"loginCount" db:"login_count"`
+	MFAEnabled         bool            `json:"mfaEnabled" db:"mfa_enabled"`
+	Profile            UserProfile     `json:"profile"`
 }
 
 // UserProfile represents the user's profile information
