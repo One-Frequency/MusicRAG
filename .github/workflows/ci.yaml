@@ -1,0 +1,93 @@
+name: CI - Code Quality & Standards
+
+on:
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: "22.17.0"
+  GO_VERSION: "1.24.4"
+
+jobs:
+  frontend-checks:
+    name: Frontend Code Quality
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Check ESLint rules
+        run: npm run lint
+
+      - name: Check Prettier formatting
+        run: npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,css,md}"
+
+      - name: TypeScript type checking
+        run: npm run type-check
+
+      - name: Build production version
+        run: npm run build
+
+  backend-checks:
+    name: Backend Code Quality
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Download Go modules
+        run: go mod download
+
+      - name: Verify Go modules
+        run: go mod verify
+
+      - name: Check Go code formatting
+        run: |
+          if [ -n "$(gofmt -l .)" ]; then
+            echo "❌ Go code is not properly formatted. Please run 'go fmt ./...' locally."
+            gofmt -l .
+            exit 1
+          else
+            echo "✅ Go code formatting is correct"
+          fi
+
+      - name: Run Go vet analysis
+        run: go vet ./...
+
+      - name: Run Go tests
+        run: go test -v ./...
+
+      - name: Check Go modules are tidy
+        run: |
+          go mod tidy
+          if [ -n "$(git diff --name-only)" ]; then
+            echo "❌ Go modules are not tidy. Please run 'go mod tidy' locally."
+            git diff
+            exit 1
+          else
+            echo "✅ Go modules are tidy"
+          fi
