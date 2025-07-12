@@ -7,7 +7,10 @@ interface ChatInputProps {
   isLoading: boolean;
 }
 
-export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }) => {
+export const ChatInput: React.FC<ChatInputProps> = ({
+  onSendMessage,
+  isLoading,
+}) => {
   const [inputMessage, setInputMessage] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 

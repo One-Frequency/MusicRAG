@@ -25,11 +25,7 @@ export const UploadArea: React.FC<UploadAreaProps> = ({
   return (
     <div className="border-b border-gray-200">
       <div className="p-4">
-        <Button
-          onClick={onToggleUpload}
-          className="w-full"
-          variant="primary"
-        >
+        <Button onClick={onToggleUpload} className="w-full" variant="primary">
           <Plus className="w-4 h-4 mr-2" />
           Upload Documents
         </Button>
