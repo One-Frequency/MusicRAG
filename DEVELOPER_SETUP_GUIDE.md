@@ -204,24 +204,24 @@ cd frontend
 # Create environment file
 cat > .env << 'EOF'
 # Enterprise Cognito Configuration
-REACT_APP_USER_POOL_ID=us-east-2_JKsb0fPHX
-REACT_APP_USER_POOL_CLIENT_ID=4qbitb6voa560333ajlg090dh6
-REACT_APP_IDENTITY_POOL_ID=us-east-2:8af4b173-d6f5-4b86-a354-cebc4ccd0d41
-REACT_APP_COGNITO_DOMAIN=https://onefrequency-enterprise-dev.auth.us-east-2.amazoncognito.com
-REACT_APP_AUTH_REDIRECT_URI=https://app.onefrequency.ai/auth/callback
-REACT_APP_AUTH_LOGOUT_URI=https://app.onefrequency.ai/auth/logout
+VITE_USER_POOL_ID=us-east-2_JKsb0fPHX
+VITE_USER_POOL_CLIENT_ID=4qbitb6voa560333ajlg090dh6
+VITE_IDENTITY_POOL_ID=us-east-2:8af4b173-d6f5-4b86-a354-cebc4ccd0d41
+VITE_COGNITO_DOMAIN=https://onefrequency-enterprise-dev.auth.us-east-2.amazoncognito.com
+VITE_AUTH_REDIRECT_URI=https://app.onefrequency.ai/auth/callback
+VITE_AUTH_LOGOUT_URI=https://app.onefrequency.ai/auth/logout
 
 # Enterprise Features
-REACT_APP_ENTERPRISE_MODE=true
-REACT_APP_RBAC_ENABLED=true
+VITE_ENTERPRISE_MODE=true
+VITE_RBAC_ENABLED=true
 
 # Backend API Configuration
-REACT_APP_API_BASE_URL=http://localhost:8080
-REACT_APP_API_VERSION=v1
+VITE_API_BASE_URL=http://localhost:8080
+VITE_API_VERSION=v1
 
 # Development Configuration
-REACT_APP_ENV=development
-REACT_APP_DEBUG=true
+VITE_ENV=development
+VITE_DEBUG=true
 EOF
 ```
 
@@ -507,7 +507,7 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:5173
 
 # Ensure frontend is using correct API URL
 # In frontend/.env:
-REACT_APP_API_BASE_URL=http://localhost:8080
+VITE_API_BASE_URL=http://localhost:8080
 ```
 
 #### 6. Azure Service Connection Issues
